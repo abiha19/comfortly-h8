@@ -22,7 +22,9 @@ export default function Footer() {
           <div className="flex flex-col w-full lg:w-1/4 items-start">
             <div className="flex items-center gap-2">
               <Image src="/Vector.png" alt="logo" width={40} height={40} />
-              <span className="text-[#272343] text-2xl font-bold">Comforty</span>
+              <span className="text-[#272343] text-2xl font-bold">
+                Comforty
+              </span>
             </div>
             <p className="mt-4 text-gray-500 text-sm">
               Vivamus tristique odio sit amet velit semper, eu posuere turpis
@@ -76,7 +78,14 @@ export default function Footer() {
           <div className="w-full lg:w-1/6">
             <h4 className="text-lg font-semibold text-[#9A9CAA]">Category</h4>
             <ul className="mt-4 text-[#272343] space-y-2 text-sm">
-              {["Sofa", "Armchair", "Wing Chair", "Desk Chair", "Wooden Chair", "Park Bench"].map((item) => (
+              {[
+                "Sofa",
+                "Armchair",
+                "Wing Chair",
+                "Desk Chair",
+                "Wooden Chair",
+                "Park Bench",
+              ].map((item) => (
                 <li key={item}>
                   <a
                     href="#"
@@ -113,9 +122,7 @@ export default function Footer() {
 
           {/* Newsletter Section */}
           <div className="w-full lg:w-1/3">
-            <h4 className="text-lg font-semibold text-[#9A9CAA]">
-              Newsletter
-            </h4>
+            <h4 className="text-lg font-semibold text-[#9A9CAA]">Newsletter</h4>
             <div className="mt-4 flex gap-2">
               <input
                 type="email"
@@ -138,7 +145,7 @@ export default function Footer() {
           <p className="text-sm">
             © 2021 - Blogy - Designed & Developed by{" "}
             <a href="#" className="text-[#272343] hover:underline">
-              Mustafa Raheel
+              Abiha Shakeel
             </a>
           </p>
           <div className="flex justify-center mt-4 lg:mt-0 space-x-4">
