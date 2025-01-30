@@ -1,109 +1,139 @@
-import { FaPlus } from "react-icons/fa6";
+"use client";
 
-export default function Faqs() {
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation"; // ✅ Fix: Use useParams()
+import { Product } from "@/types/products";
+import { client, urlFor } from "@/src/sanity/lib/client";
+import { groq } from "next-sanity";
+import Image from "next/image";
+import { ShoppingCart } from "lucide-react";
+import Swal from "sweetalert2";
+import { addToCart } from "@/src/app/actions/actions";
+
+async function getProduct(slug: string): Promise<Product | null> {
+  return await client.fetch(
+    groq`
+      *[_type == "products" && slug.current == $slug][0] {
+        _id,
+        title,
+        description,
+        price,
+        priceWithoutDiscount,
+        badge,
+        image,
+        inventory,
+        slug,
+      }
+    `,
+    { slug }
+  );
+}
+
+export default function ProductPage() {
+  const params = useParams(); // ✅ Fix: useParams() to unwrap params
+  const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug; // ✅ Ensure slug is a string
+
+  const [product, setProduct] = useState<Product | null>(null);
+
+  useEffect(() => {
+    if (!slug) return; // ✅ Prevent fetching if slug is missing
+
+    async function fetchProduct() {
+      if (slug) {
+        const fetchedProduct = await getProduct(slug);
+        setProduct(fetchedProduct);
+      }
+    }
+
+    fetchProduct();
+  }, [slug]);
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    if (product && product.inventory > 0) {
+      addToCart(product);
+      window.dispatchEvent(new CustomEvent("cart-updated"));
+    } else {
+      Swal.fire({
+        title: "Out of Stock",
+        text: `Sorry, ${product?.title} is out of stock.`,
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+    }
+  };
+
+  if (!product) {
+    return (
+      <div className="container mx-auto px-6 py-20">
+        <p className="text-center text-gray-500">Loading product...</p>
+      </div>
+    );
+  }
+
   return (
-    <>
-      <div className="max-w-screen-xl mx-auto mt-16 text-center px-4 sm:px-6 lg:px-8">
-        <h1 className="text-[48px] text-[#333333] font-bold mb-4">
-          Questions Looks Here
-        </h1>
+    <div className="container mx-auto px-6 py-20">
+      <div className="flex flex-col lg:flex-row items-start bg-white rounded-lg shadow-md p-6 gap-8">
+        <div className="flex-shrink-0 mb-6 lg:mb-0">
+          <Image
+            src={urlFor(product.image).url()}
+            alt={product.title}
+            width={300}
+            height={300}
+            className="rounded-md object-contain"
+          />
+        </div>
 
-        <p className="text-[16px] font-normal mb-8 text-[#4F4F4F]">
-          Lorem Ipsum is simply dummy text of the printing and typesetting
-          industry. Lorem Ipsum has been the
-        </p>
+        <div className="flex-grow">
+          <h1 className="text-3xl font-bold text-gray-900">{product.title}</h1>
 
-        {/* FAQ Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-12 mb-24">
-          <div>
-            {/* FAQ Card */}
-            <div className="bg-[#F7F7F7] p-6 w-full h-auto max-w-full rounded-lg mb-6 text-left">
-              <h3 className="text-[18px] pt-4 font-bold flex justify-between">
-                What types of chairs do you offer?
-                <FaPlus />
-              </h3>
-              <p className="mt-4 text-[16px] font-bold text-[#4F4F4F]">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Nisi
-                quis modi ullam amet debitis libero veritatis enim repellat
-                optio natus eum delectus deserunt, odit expedita eos molestiae
-                ipsa totam quidem?
-              </p>
-            </div>
+          {product.badge && (
+            <span
+              className={`inline-block px-3 py-1 mt-2 text-sm font-medium rounded ${
+                product.badge === "New"
+                  ? "bg-emerald-500 text-white"
+                  : "bg-orange-500 text-white"
+              }`}
+            >
+              {product.badge}
+            </span>
+          )}
 
-            {/* FAQ Card */}
-            <div className="bg-[#F7F7F7] p-6 w-full h-auto max-w-full rounded-lg mb-6 text-left">
-              <h3 className="text-[18px] pt-4 font-bold flex justify-between">
-                Do your chairs come with a warranty?
-                <FaPlus />
-              </h3>
-              <p className="mt-4 text-[16px] font-bold text-[#4F4F4F]">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Nisi
-                quis modi ullam amet debitis libero veritatis enim repellat
-                optio natus eum delectus deserunt, odit expedita eos molestiae
-                ipsa totam quidem?
-              </p>
-            </div>
-
-            {/* FAQ Card */}
-            <div className="bg-[#F7F7F7] p-6 w-full h-auto max-w-full rounded-lg mb-6 text-left">
-              <h3 className="text-[18px] pt-4 font-bold flex justify-between">
-                Can I try a chair before purchasing?
-                <FaPlus />
-              </h3>
-              <p className="mt-4 text-[16px] font-bold text-[#4F4F4F]">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Nisi
-                quis modi ullam amet debitis libero veritatis enim repellat
-                optio natus eum delectus deserunt, odit expedita eos molestiae
-                ipsa totam quidem?
-              </p>
-            </div>
+          <div className="mt-4 flex items-center gap-4">
+            <span className="text-2xl font-semibold text-teal-600">
+              ${product.price.toFixed(2)}
+            </span>
+            {product.priceWithoutDiscount && (
+              <span className="text-lg text-gray-500 line-through">
+                ${product.priceWithoutDiscount.toFixed(2)}
+              </span>
+            )}
           </div>
 
-          <div>
-            {/* FAQ Card */}
-            <div className="bg-[#F7F7F7] p-6 w-full h-auto max-w-full rounded-lg mb-6 text-left">
-              <h3 className="text-[18px] pt-4 font-bold flex justify-between">
-                How can we get in touch with you?
-                <FaPlus />
-              </h3>
-              <p className="mt-4 text-[16px] font-bold text-[#4F4F4F]">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Nisi
-                quis modi ullam amet debitis libero veritatis enim repellat
-                optio natus eum delectus deserunt, odit expedita eos molestiae
-                ipsa totam quidem?
-              </p>
-            </div>
+          <p className="mt-4 text-sm text-gray-600">
+            {product.inventory
+              ? `${product.inventory} items in stock`
+              : "Out of stock"}
+          </p>
 
-            {/* FAQ Card */}
-            <div className="bg-[#F7F7F7] p-6 w-full h-auto max-w-full rounded-lg mb-6 text-left">
-              <h3 className="text-[18px] pt-4 font-bold flex justify-between">
-                What will be delivered? And When?
-                <FaPlus />
-              </h3>
-              <p className="mt-4 text-[16px] font-bold text-[#4F4F4F]">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Nisi
-                quis modi ullam amet debitis libero veritatis enim repellat
-                optio natus eum delectus deserunt, odit expedita eos molestiae
-                ipsa totam quidem?
-              </p>
-            </div>
+          <p className="mt-4 text-gray-700">{product.description}</p>
 
-            {/* FAQ Card */}
-            <div className="bg-[#F7F7F7] p-6 w-full h-auto max-w-full rounded-lg text-left">
-              <h3 className="text-[18px] pt-4 font-bold flex justify-between">
-                How do I clean and maintain my Comforty chair?
-                <FaPlus />
-              </h3>
-              <p className="mt-4 text-[16px] font-bold text-[#4F4F4F]">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Nisi
-                quis modi ullam amet debitis libero veritatis enim repellat
-                optio natus eum delectus deserunt, odit expedita eos molestiae
-                ipsa totam quidem?
-              </p>
-            </div>
-          </div>
+          <button
+            className={`mt-6 px-6 py-3 ${
+              product.inventory > 0
+                ? "bg-[#00B5A5] hover:bg-[#00A294]"
+                : "bg-gray-500 cursor-not-allowed"
+            } text-white text-lg font-medium rounded-full transition-colors`}
+            aria-label="Add to cart"
+            onClick={handleAddToCart}
+            disabled={!product.inventory}
+          >
+            <ShoppingCart className="h-5 w-5 inline-block mr-2" />
+            {product.inventory ? "Add to Cart" : "Out of Stock"}
+          </button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
