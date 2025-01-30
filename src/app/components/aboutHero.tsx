@@ -41,7 +41,7 @@ const Hero = () => {
             alt="Furniture Collection"
             width={434}
             height={584}
-            className="rounded-lg shadow-md"
+            className="rounded-lg"
             priority={true} // Prioritize loading the hero image
           />
         </div>

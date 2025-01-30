@@ -1,5 +1,11 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import { client } from "@/src/sanity/lib/client";
+import { allCategory } from "@/src/sanity/lib/queries";
+import Link from "next/link";
+import { Category } from "@/types/category";
 import {
   FaFacebookF,
   FaTwitter,
@@ -11,8 +17,49 @@ import {
   FaCcMastercard,
   FaCcAmex,
 } from "react-icons/fa";
+import Swal from "sweetalert2";
 
 export default function Footer() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const fetchedCategories: Category[] = await client.fetch(allCategory);
+        setCategories(fetchedCategories);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    }
+    fetchCategories();
+  }, []);
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Swal.fire({
+        icon: "error",
+        title: "Invalid Email",
+        text: "Please enter a valid email address.",
+      });
+      return;
+    }
+
+    // Success prompt
+    Swal.fire({
+      icon: "success",
+      title: "Subscribed!",
+      text: "You have successfully subscribed to our newsletter.",
+    });
+
+    // Clear input field
+    setEmail("");
+  };
+
   return (
     <footer className="bg-white border-t border-gray-200 px-4 sm:px-12 md:px-28">
       <div className="mx-auto py-12">
@@ -22,9 +69,7 @@ export default function Footer() {
           <div className="flex flex-col w-full lg:w-1/4 items-start">
             <div className="flex items-center gap-2">
               <Image src="/Vector.png" alt="logo" width={40} height={40} />
-              <span className="text-[#272343] text-2xl font-bold">
-                Comforty
-              </span>
+              <span className="text-[#272343] text-2xl font-bold">Comforty</span>
             </div>
             <p className="mt-4 text-gray-500 text-sm">
               Vivamus tristique odio sit amet velit semper, eu posuere turpis
@@ -78,23 +123,20 @@ export default function Footer() {
           <div className="w-full lg:w-1/6">
             <h4 className="text-lg font-semibold text-[#9A9CAA]">Category</h4>
             <ul className="mt-4 text-[#272343] space-y-2 text-sm">
-              {[
-                "Sofa",
-                "Armchair",
-                "Wing Chair",
-                "Desk Chair",
-                "Wooden Chair",
-                "Park Bench",
-              ].map((item) => (
-                <li key={item}>
-                  <a
-                    href="#"
-                    className="hover:text-[#007580] hover:underline hover:underline-offset-4"
-                  >
-                    {item}
-                  </a>
-                </li>
-              ))}
+              {categories.length > 0 ? (
+                categories.map((category) => (
+                  <li key={category._id}>
+                    <Link
+                      href={`/categories/${category.slug.current}`}
+                      className="hover:text-[#007580] hover:underline hover:underline-offset-4"
+                    >
+                      {category.title}
+                    </Link>
+                  </li>
+                ))
+              ) : (
+                <li>Loading categories...</li>
+              )}
             </ul>
           </div>
 
@@ -102,37 +144,39 @@ export default function Footer() {
           <div className="w-full lg:w-1/6">
             <h4 className="text-lg font-semibold text-[#9A9CAA]">Support</h4>
             <ul className="mt-4 text-[#272343] space-y-2 text-sm">
-              {[
-                "Help & Support",
-                "Terms & Conditions",
-                "Privacy Policy",
-                "Help",
-              ].map((item) => (
-                <li key={item}>
-                  <a
-                    href="#"
-                    className="hover:text-[#007580] hover:underline hover:underline-offset-4"
-                  >
-                    {item}
-                  </a>
-                </li>
-              ))}
+              {["Help & Support", "Terms & Conditions", "Privacy Policy", "Help"].map(
+                (item) => (
+                  <li key={item}>
+                    <a
+                      href="#"
+                      className="hover:text-[#007580] hover:underline hover:underline-offset-4"
+                    >
+                      {item}
+                    </a>
+                  </li>
+                )
+              )}
             </ul>
           </div>
 
           {/* Newsletter Section */}
           <div className="w-full lg:w-1/3">
             <h4 className="text-lg font-semibold text-[#9A9CAA]">Newsletter</h4>
-            <div className="mt-4 flex gap-2">
+            <form onSubmit={handleSubscribe} className="mt-4 flex gap-2">
               <input
                 type="email"
                 placeholder="Your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="px-4 py-2 w-full border text-[#9A9CAA] border-gray-300 rounded-l-md focus:outline-none"
               />
-              <button className="bg-[#029FAE] text-white px-6 py-2 rounded-md hover:bg-teal-700">
+              <button
+                type="submit"
+                className="bg-[#029FAE] text-white px-6 py-2 rounded-md hover:bg-teal-700"
+              >
                 Subscribe
               </button>
-            </div>
+            </form>
             <p className="mt-4 text-gray-500 text-sm">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam
               tincidunt erat enim.
@@ -145,7 +189,7 @@ export default function Footer() {
           <p className="text-sm">
             © 2021 - Blogy - Designed & Developed by{" "}
             <a href="#" className="text-[#272343] hover:underline">
-              Abiha Shakeel
+              Mustafa Raheel
             </a>
           </p>
           <div className="flex justify-center mt-4 lg:mt-0 space-x-4">

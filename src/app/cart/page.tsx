@@ -1,111 +1,212 @@
-import React from "react";
-import Image from "next/image";
-import { CiHeart } from "react-icons/ci";
-import { RiDeleteBin6Line } from "react-icons/ri";
+"use client";
 
+import React, { useState, useEffect } from "react";
+import Image from "next/image";
+import { RiDeleteBin6Line } from "react-icons/ri";
+import Swal from "sweetalert2";
+import { getCartItems, removeFromCart, updateCartQuantity } from "../actions/actions";
+import { Product } from "@/types/products";
+import { urlFor } from "@/src/sanity/lib/client";
 
 const Cart = () => {
-  return (
-    <div className="max-w-[1321px] mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Cart Items */}
-        <div className="lg:col-span-2">
-          <h2 className="text-[22px] font-medium pl-3 mb-6">Bag</h2>
+  const [cartItems, setCartItems] = useState<Product[]>([]);
 
-          {/* Item 1 */}
-          <div className="flex items-center justify-between bg-white p-4 rounded-lg shadow-md mb-4">
-            <div className="flex items-center space-x-4">
-              <div className="w-24 h-24 bg-orange-200 rounded">
-                <Image src="/02.jpg" alt="." width={150} height={150} />
-              </div>
-              <div>
-                <h3 className="text-[16px] font-normal text-[#272343] mb-3">
-                  Library Stool Chair
-                </h3>
-                <p className="text-sm text-gray-500 mb-1">
-                  Ashen Slate/Cobalt Bliss
-                </p>
-                <div className="flex space-x-12">
-                  <p className="text-[15px] font-normal text-[#757575]">
-                    Size: L
-                  </p>
-                  <p className="text-[15px] font-normal text-[#757575]">
-                    Quantity: 1
-                  </p>
-                </div>
-                <div className="flex gap-3 mt-3">
-                  <CiHeart />
-                  <RiDeleteBin6Line />
-                </div>
-              </div>
-            </div>
-            <div className=" flex gap-3">
-              <p className="text-[16px] font-normal text-[#111111]">MRP: </p>
-              <p className="text-[16px] font-normal text-[#111111] ">$99</p>
-            </div>
-            <div className="flex items-center space-x-2"></div>
-          </div>
+  useEffect(() => {
+    setCartItems(getCartItems());
+  }, []);
 
-          {/* Item 2 */}
-          <div className="flex items-center justify-between bg-white p-4 rounded-lg shadow-md">
-            <div className="flex items-center space-x-4">
-              <div className="w-24 h-24 bg-gray-300 rounded">
-                <Image src="/02.jpg" alt="." width={150} height={150} />
-              </div>
-              <div>
-                <h3 className="text-[16px] font-normal text-[#272343] mb-3">
-                  Library Stool Chair
-                </h3>
-                <p className="text-[15px] font-normal text-[#757575] mb-1">
-                  Ashen Slate/Cobalt Bliss
-                </p>
-                <div className="flex space-x-12">
-                  <p className="text-[15px] font-normal text-[#757575]">
-                    Size: L
-                  </p>
-                  <p className="text-[15px] font-normal text-[#757575]">
-                    Quantity: 1
-                  </p>
-                </div>
-                <div className="flex gap-3 mt-3">
-                  <CiHeart />
-                  <RiDeleteBin6Line />
-                </div>
-              </div>
-            </div>
-            <div className=" flex gap-3 ">
-              <p className="text-[16px] font-normal text-[#111111]">MRP: </p>
-              <p className="text-[16px] font-normal text-[#111111]">$99</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              
-            </div>
-          </div>
+  const handleRemove = (id: string) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You will not be able to recover this item!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        removeFromCart(id);
+        setCartItems(getCartItems()); // Refresh cart items
+        const event = new CustomEvent("cart-updated");
+        window.dispatchEvent(event); // Trigger header update
+        Swal.fire("Removed!", "Item has been removed.", "success");
+      }
+    });
+  };
+
+  const handleQuantityChange = (id: string, quantity: number) => {
+    updateCartQuantity(id, quantity);
+    setCartItems(getCartItems());
+  };
+
+  const handleIncrement = (id: string) => {
+    const product = cartItems.find((item) => item._id === id);
+    if (product) {
+      handleQuantityChange(id, product.inventory + 1);
+    }
+  };
+
+  const handleDecrement = (id: string) => {
+    const product = cartItems.find((item) => item._id === id);
+    if (product && product.inventory > 1) {
+      handleQuantityChange(id, product.inventory - 1);
+    }
+  };
+
+  const getTotalPrice = () => {
+    return cartItems.reduce(
+      (total, item) => total + (item.price ? item.price * item.inventory : 0),
+      0
+    );
+  };
+
+  const handleProceedToCheckout = () => {
+    const cartSummary = cartItems
+      .map(
+        (item) =>
+          `<div class='flex justify-between mb-2'>
+            <span>${item.title} (x${item.inventory})</span>
+            <span>$${item.price * item.inventory}</span>
+          </div>`
+      )
+      .join("");
+
+    const total = getTotalPrice();
+
+    Swal.fire({
+      title: "Order Summary",
+      html: `
+        <div class='text-left'>
+          <h3 class='text-lg font-bold mb-3'>Items:</h3>
+          ${cartSummary}
+          <hr class='my-3' />
+          <h4 class='text-lg font-bold'>Total: $${total}</h4>
         </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: "Place Order",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire({
+          title: "Placing Order...",
+          html: `<div class='flex justify-center items-center'>
+                   <div class='animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500'></div>
+                 </div>`,
+          allowOutsideClick: false,
+          showConfirmButton: false,
+          didOpen: () => {
+            setTimeout(() => {
+              Swal.fire("Order Placed!", "Your order has been placed successfully.", "success");
+              localStorage.clear();
+              setCartItems([]); // Clear cart after checkout
+              const event = new CustomEvent("cart-updated");
+              window.dispatchEvent(event); // Trigger header update
+            }, 2000);
+          },
+        });
+      }
+    });
+  };
 
-        {/* Summary */}
-        <div>
-          <h2 className="text-2xl font-bold mb-6">Summary</h2>
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <div className="flex justify-between mb-4">
-              <p className="text-lg">Subtotal</p>
-              <p className="text-lg font-semibold">$198.00</p>
+  // Clear Cart function
+  const handleClearCart = () => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "This will remove all items from your cart!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, clear it!",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.removeItem("cart"); // Remove items from local storage
+        setCartItems([]); // Clear cart state
+        const event = new CustomEvent("cart-updated");
+        window.dispatchEvent(event); // Trigger header update
+        Swal.fire("Cleared!", "All items have been removed from your cart.", "success");
+      }
+    });
+  };
+
+  return (
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Your Cart</h2>
+        <button
+          onClick={handleClearCart}
+          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+        >
+          Clear Cart
+        </button>
+      </div>
+      {cartItems.length > 0 ? (
+        <div className="space-y-6">
+          {cartItems.map((item) => (
+            <div key={item._id} className="flex items-center space-x-4 border-b pb-4">
+              {item.image ? (
+                <Image
+                  src={urlFor(item.image).url()}
+                  alt={item.image?.alt || item.title || "Product image"}
+                  width={80}
+                  height={80}
+                  className="rounded-lg"
+                />
+              ) : (
+                <Image
+                  src="/placeholder.png"
+                  alt="Placeholder Image"
+                  width={80}
+                  height={80}
+                  className="rounded-lg"
+                />
+              )}
+              <div className="flex-1">
+                <p className="font-semibold">{item.title}</p>
+                <p className="text-gray-500">${item.price}</p>
+                <div className="flex items-center space-x-2 mt-2">
+                  <button
+                    onClick={() => handleDecrement(item._id)}
+                    className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                  >
+                    -
+                  </button>
+                  <span>{item.inventory}</span>
+                  <button
+                    onClick={() => handleIncrement(item._id)}
+                    className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              <RiDeleteBin6Line
+                size={24}
+                className="text-red-500 cursor-pointer"
+                onClick={() => handleRemove(item._id)}
+              />
             </div>
-            <div className="flex justify-between mb-4">
-              <p className="text-lg">Estimated Delivery & Handling</p>
-              <p className="text-lg font-semibold text-green-500">Free</p>
-            </div>
-            <hr className="mb-4" />
-            <div className="flex justify-between mb-6">
-              <p className="text-xl font-bold">Total</p>
-              <p className="text-xl font-bold">$198.00</p>
-            </div>
-            <button className="w-[334.67px] h-[60px] rounded-[30px] text-white bg-[#029FAE]">
-              Member Checkout
+          ))}
+          <div className="mt-4">
+            <p className="text-lg font-semibold">Total: ${getTotalPrice()}</p>
+            <button
+              onClick={handleProceedToCheckout}
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Proceed to Checkout
             </button>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+          <p className="mt-4 text-lg font-semibold">Your cart is empty!</p>
+          <p className="text-sm">Add some items to get started.</p>
+        </div>
+      )}
     </div>
   );
 };

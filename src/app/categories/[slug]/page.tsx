@@ -2,48 +2,80 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Product } from "@/types/products";
-import { allProducts } from "@/src/sanity/lib/queries";
-import { client, urlFor } from "@/src/sanity/lib/client";
-import { ShoppingCart } from "lucide-react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { client, urlFor } from "@/src/sanity/lib/client";
+import { groq } from "next-sanity";
+import { ShoppingCart } from "lucide-react";
 import { addToCart } from "@/src/app/actions/actions";
+import { Product } from "@/types/products"; // Use the shared Product type
 
-export default function AllProduct() {
+export default function CategoryProducts() {
+  const params = useParams();
+  const slug = params.slug as string;
+
   const [products, setProducts] = useState<Product[]>([]);
+  const [categoryName, setCategoryName] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchProducts() {
+      const query = groq`
+        *[_type == "products" && category->slug.current == $slug] {
+          _id,
+          _type,
+          title,
+          price,
+          badge,
+          inventory,
+          priceWithoutDiscount,
+          slug,
+          image {
+            asset-> {
+              _ref,
+              url
+            }
+          }
+        }
+      `;
+      const categoryQuery = groq`
+        *[_type == "categories" && slug.current == $slug][0] {
+          title
+        }
+      `;
+
       try {
-        const fetchedProducts: Product[] = await client.fetch(allProducts);
+        const fetchedProducts = await client.fetch(query, { slug });
+        const categoryData = await client.fetch(categoryQuery, { slug });
+
         setProducts(fetchedProducts);
+        setCategoryName(categoryData?.title || "Category");
       } catch (error) {
-        console.error("Error fetching products:", error);
+        console.error("Error fetching products or category:", error);
       }
     }
+
     fetchProducts();
-  }, []);
+  }, [slug]);
 
   const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     addToCart(product);
 
-    // Dispatch event to notify the header component
     const event = new CustomEvent("cart-updated");
     window.dispatchEvent(event);
   };
 
   return (
-    <section className="w-full mx-auto px-6 py-20">
+    <section className="container mx-auto px-6 py-20">
       <header className="mb-10">
         <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-          All Products
+          {categoryName}
         </h1>
       </header>
 
       {products.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          {products.map((prod) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          {products.map((prod: Product) => {
             const productImage =
               prod.image && Array.isArray(prod.image)
                 ? prod.image[0]
@@ -54,7 +86,6 @@ export default function AllProduct() {
                 key={prod._id}
                 className="group relative rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300"
               >
-                {/* Product Image */}
                 <Link href={`/product/${prod.slug.current}`}>
                   <div className="relative overflow-hidden rounded-lg aspect-square">
                     {prod.badge && (
@@ -84,7 +115,6 @@ export default function AllProduct() {
                   </div>
                 </Link>
 
-                {/* Product Info */}
                 <div className="mt-4 flex justify-between items-center px-2">
                   <div>
                     <h3 className="text-sm text-[#1C1B1F] font-medium">
@@ -110,7 +140,9 @@ export default function AllProduct() {
           })}
         </div>
       ) : (
-        <div>No products available.</div>
+        <div className="text-center text-gray-500 text-lg">
+          No products available in this category.
+        </div>
       )}
     </section>
   );

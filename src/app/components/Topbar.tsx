@@ -21,8 +21,11 @@ const Topbar = () => {
           </div>
 
           {/* FAQ Link */}
-          <Link href="/faq">
-            <a className="cursor-pointer">FAQs</a>
+          <Link
+            href="/faq"
+            className="cursor-pointer"
+          >
+            FAQs
           </Link>
 
           {/* Help Section */}

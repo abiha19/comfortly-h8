@@ -9,7 +9,8 @@ const poppins = Poppins({ subsets: ["latin"], weight: ["500", "600"] });
 const ContactSection = () => {
   return (
     <div className="w-full max-w-screen-xl h-auto bg-[#F4F4F4] flex flex-wrap items-center justify-between px-8 py-6">
-      <div className="flex items-center space-x-4 mb-6 sm:mb-0">
+      {/* High Quality Section */}
+      <div className="flex items-center space-x-4 mb-6 sm:mb-0 w-full sm:w-auto">
         <BsTrophy className="w-[52.77px] h-[60px] text-black" />
         <div>
           <h2
@@ -25,7 +26,8 @@ const ContactSection = () => {
         </div>
       </div>
 
-      <div className="flex items-center space-x-4 mb-6 sm:mb-0">
+      {/* Warranty Protection Section */}
+      <div className="flex items-center space-x-4 mb-6 sm:mb-0 w-full sm:w-auto">
         <GoVerified className="w-[60px] h-[60px] text-black" />
         <div>
           <h2
@@ -41,7 +43,8 @@ const ContactSection = () => {
         </div>
       </div>
 
-      <div className="flex items-center space-x-4 mr-6">
+      {/* 24/7 Support Section */}
+      <div className="flex items-center space-x-4 w-full sm:w-auto">
         <MdSupportAgent className="w-[52.77px] h-[60px] text-black" />
         <div>
           <h2

@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export default function HotProduct() {
   return (
-    <header className="container mx-auto px-4 py-12 lg:py-16">
+    <header className="w-full mx-auto px-4 py-6 lg:py-16">
       <div className="relative grid grid-cols-1 gap-8 md:grid-cols-[auto_1fr]">
         {/* Vertical text */}
         <div className="writing-mode-vertical hidden text-xl font-medium tracking-wider text-zinc-900 md:block pt-6">
@@ -10,7 +10,7 @@ export default function HotProduct() {
         </div>
 
         {/* Mobile text version */}
-        <div className="text-xl font-medium tracking-wider text-zinc-900 md:hidden">
+        <div className="flex items-center justify-center text-xl font-medium tracking-wider text-zinc-900 md:hidden">
           EXPLORE NEW AND POPULAR STYLES
         </div>
 

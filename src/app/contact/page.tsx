@@ -160,7 +160,9 @@ const Page = () => {
       </div>
 
       {/* Contact Section */}
-      <ContactSection />
+      <div className="mb-8">
+        <ContactSection />
+      </div>
     </div>
   );
 };
