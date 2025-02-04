@@ -4,35 +4,24 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import Swal from "sweetalert2";
+import { useRouter } from "next/navigation";
 import { getCartItems, removeFromCart, updateCartQuantity } from "../actions/actions";
 import { Product } from "@/types/products";
 import { urlFor } from "@/src/sanity/lib/client";
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState<Product[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     setCartItems(getCartItems());
   }, []);
 
   const handleRemove = (id: string) => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "You will not be able to recover this item!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        removeFromCart(id);
-        setCartItems(getCartItems()); // Refresh cart items
-        const event = new CustomEvent("cart-updated");
-        window.dispatchEvent(event); // Trigger header update
-        Swal.fire("Removed!", "Item has been removed.", "success");
-      }
-    });
+    removeFromCart(id);
+    setCartItems(getCartItems());
+    const event = new CustomEvent("cart-updated");
+    window.dispatchEvent(event);
   };
 
   const handleQuantityChange = (id: string, quantity: number) => {
@@ -62,74 +51,18 @@ const Cart = () => {
   };
 
   const handleProceedToCheckout = () => {
-    const cartSummary = cartItems
-      .map(
-        (item) =>
-          `<div class='flex justify-between mb-2'>
-            <span>${item.title} (x${item.inventory})</span>
-            <span>$${item.price * item.inventory}</span>
-          </div>`
-      )
-      .join("");
-
-    const total = getTotalPrice();
-
     Swal.fire({
-      title: "Order Summary",
-      html: `
-        <div class='text-left'>
-          <h3 class='text-lg font-bold mb-3'>Items:</h3>
-          ${cartSummary}
-          <hr class='my-3' />
-          <h4 class='text-lg font-bold'>Total: $${total}</h4>
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: "Place Order",
-      cancelButtonText: "Cancel",
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        Swal.fire({
-          title: "Placing Order...",
-          html: `<div class='flex justify-center items-center'>
-                   <div class='animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500'></div>
-                 </div>`,
-          allowOutsideClick: false,
-          showConfirmButton: false,
-          didOpen: () => {
-            setTimeout(() => {
-              Swal.fire("Order Placed!", "Your order has been placed successfully.", "success");
-              localStorage.clear();
-              setCartItems([]); // Clear cart after checkout
-              const event = new CustomEvent("cart-updated");
-              window.dispatchEvent(event); // Trigger header update
-            }, 2000);
-          },
-        });
-      }
-    });
-  };
-
-  // Clear Cart function
-  const handleClearCart = () => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "This will remove all items from your cart!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, clear it!",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        localStorage.removeItem("cart"); // Remove items from local storage
-        setCartItems([]); // Clear cart state
-        const event = new CustomEvent("cart-updated");
-        window.dispatchEvent(event); // Trigger header update
-        Swal.fire("Cleared!", "All items have been removed from your cart.", "success");
-      }
+      icon: "info",
+      title: "Processing Your Order...",
+      html: `<div class='flex justify-center items-center'>
+               <div class='animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500'></div>
+             </div>`,
+      allowOutsideClick: false,
+      showConfirmButton: false,
+      timer: 2000, // Simulating loading time
+      didClose: () => {
+        router.push("/checkout"); // Navigate to checkout page after loading
+      },
     });
   };
 
@@ -137,12 +70,6 @@ const Cart = () => {
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Your Cart</h2>
-        <button
-          onClick={handleClearCart}
-          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-        >
-          Clear Cart
-        </button>
       </div>
       {cartItems.length > 0 ? (
         <div className="space-y-6">
@@ -195,7 +122,7 @@ const Cart = () => {
             <p className="text-lg font-semibold">Total: ${getTotalPrice()}</p>
             <button
               onClick={handleProceedToCheckout}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="mt-4 px-4 py-2 bg-[#007580] text-white rounded hover:bg-blue-700"
             >
               Proceed to Checkout
             </button>
